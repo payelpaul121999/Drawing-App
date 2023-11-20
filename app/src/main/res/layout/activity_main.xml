@@ -11,7 +11,7 @@
        android:id="@+id/txt"
        android:layout_width="match_parent"
        android:layout_height="wrap_content"
-       android:textSize="30dp"
+       android:textSize="14dp"
        android:layout_marginTop="10dp"
        android:text="Drawing App"
        android:gravity="center"
@@ -153,6 +153,7 @@
        android:layout_margin="5dp"
        android:contentDescription="image"
        android:scaleType="fitXY"
+       android:visibility="gone"
        android:src="@drawable/ic_baseline_image"
        />
    <ImageButton
@@ -179,6 +180,7 @@
        android:layout_height="50dp"
        android:contentDescription="image"
        android:scaleType="fitXY"
+       android:visibility="gone"
        android:src="@drawable/ic_baseline_save" />
 
 </LinearLayout>

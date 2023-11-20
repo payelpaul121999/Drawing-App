@@ -15,19 +15,17 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
 import android.view.View
-import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.get
-import com.google.android.material.snackbar.Snackbar
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.dialog_brush_size.*
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
-import java.util.jar.Manifest
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -44,41 +42,31 @@ class MainActivity : AppCompatActivity() {
 
         ib_brush.setOnClickListener { showBrushSizeChosserDialog() }
 
-        ib_gallery.setOnClickListener {
-            //Very firstly we will check the app required a storage permission.
-            // So we will add a permission in the Android.xml for storage.
 
+        ib_undo.setOnClickListener {
+         drawing_view.onClickUndo()
+        }
+       /* ib_save.setOnClickListener {
             //First checking if the app is already having the permission
             if (isReadStorageAllowed()) {
-
-                // This is for selecting the image from local store or let say from Gallery/Photos.
+                BitmapAsyncTask(getBitmapFromView(fl_drawing_view_container)).execute()
+            } else {
+                //If the app don't have storage access permission we will ask for it.
+                requestStoragePermission()
+            }
+        }
+        */
+        ib_gallery.setOnClickListener {
+            if (isReadStorageAllowed()) {
                 val pickPhoto = Intent(
                     Intent.ACTION_PICK,
                     MediaStore.Images.Media.EXTERNAL_CONTENT_URI
                 )
                 startActivityForResult(pickPhoto, GALLERY)
             } else {
-
-                //If the app don't have storage access permission we will ask for it.
                 requestStoragePermission()
             }
         }
-        ib_undo.setOnClickListener {
-         drawing_view.onClickUndo()
-        }
-        ib_save.setOnClickListener {
-
-            //First checking if the app is already having the permission
-            if (isReadStorageAllowed()) {
-
-                BitmapAsyncTask(getBitmapFromView(fl_drawing_view_container)).execute()
-            } else {
-
-                //If the app don't have storage access permission we will ask for it.
-                requestStoragePermission()
-            }
-        }
-
     }
 
     private fun getBitmapFromView(view: View): Bitmap {
@@ -93,7 +81,6 @@ class MainActivity : AppCompatActivity() {
         }
         // draw the view on the canvas
         view.draw(canvas)
-        //return the bitmap
         return returnedBitmap
     }
 
@@ -119,38 +106,15 @@ class MainActivity : AppCompatActivity() {
                     // The buffer capacity is initially 32 bytes, though its size increases if necessary.
 
                     mBitmap.compress(Bitmap.CompressFormat.PNG, 90, bytes)
-                    /**
-                     * Write a compressed version of the bitmap to the specified outputstream.
-                     * If this returns true, the bitmap can be reconstructed by passing a
-                     * corresponding inputstream to BitmapFactory.decodeStream(). Note: not
-                     * all Formats support all bitmap configs directly, so it is possible that
-                     * the returned bitmap from BitmapFactory could be in a different bitdepth,
-                     * and/or may have lost per-pixel alpha (e.g. JPEG only supports opaque
-                     * pixels).
-                     *
-                     * @param format   The format of the compressed image
-                     * @param quality  Hint to the compressor, 0-100. 0 meaning compress for
-                     *                 small size, 100 meaning compress for max quality. Some
-                     *                 formats, like PNG which is lossless, will ignore the
-                     *                 quality setting
-                     * @param stream   The outputstream to write the compressed data.
-                     * @return true if successfully compressed to the specified stream.
-                     */
-
                     val f = File(
                         externalCacheDir!!.absoluteFile.toString()
                                 + File.separator + "KidDrawingApp_" + System.currentTimeMillis() / 1000 + ".jpg"
                     )
-                    // Here the Environment : Provides access to environment variables.
-                    // getExternalStorageDirectory : returns the primary shared/external storage directory.
-                    // absoluteFile : Returns the absolute form of this abstract pathname.
-                    // File.separator : The system-dependent default name-separator character. This string contains a single character.
 
-                    val fo =
-                        FileOutputStream(f) // Creates a file output stream to write to the file represented by the specified object.
-                    fo.write(bytes.toByteArray()) // Writes bytes from the specified byte array to this file output stream.
-                    fo.close() // Closes this file output stream and releases any system resources associated with this stream. This file output stream may no longer be used for writing bytes.
-                    result = f.absolutePath // The file absolute path is return as a result.
+                    val fo = FileOutputStream(f)
+                    fo.write(bytes.toByteArray())
+                    fo.close()
+                    result = f.absolutePath
                 } catch (e: Exception) {
                     result = ""
                     e.printStackTrace()
@@ -161,9 +125,7 @@ class MainActivity : AppCompatActivity() {
 
         override fun onPostExecute(result: String) {
             super.onPostExecute(result)
-
             cancelProgressDialog()
-
             if (!result.isEmpty()) {
                 Toast.makeText(
                     this@MainActivity,
@@ -178,28 +140,16 @@ class MainActivity : AppCompatActivity() {
                 ).show()
             }
 
-            // TODO (Step 1 - Sharing the downloaded Image file)
-            // START
 
-            /*MediaScannerConnection provides a way for applications to pass a
-            newly created or downloaded media file to the media scanner service.
-            The media scanner service will read metadata from the file and add
-            the file to the media content provider.
-            The MediaScannerConnectionClient provides an interface for the
-            media scanner service to return the Uri for a newly scanned file
-            to the client of the MediaScannerConnection class.*/
-
-            /*scanFile is used to scan the file when the connection is established with MediaScanner.*/
             MediaScannerConnection.scanFile(
                 this@MainActivity, arrayOf(result), null
             ) { path, uri ->
-                // This is used for sharing the image after it has being stored in the storage.
                 val shareIntent = Intent()
                 shareIntent.action = Intent.ACTION_SEND
                 shareIntent.putExtra(
                     Intent.EXTRA_STREAM,
                     uri
-                ) // A content: URI holding a stream of data associated with the Intent, used to supply the data being sent.
+                )
                 shareIntent.type =
                     "image/jpeg" // The MIME type of the data being handled by this intent.
                 startActivity(
@@ -207,11 +157,7 @@ class MainActivity : AppCompatActivity() {
                         shareIntent,
                         "Share"
                     )
-                )// Activity Action: Display an activity chooser,
-                // allowing the user to pick what they want to before proceeding.
-                // This can be used as an alternative to the standard activity picker
-                // that is displayed by the system when you try to start an activity with multiple possible matches,
-                // with these differences in behavior:
+                )
             }
             // END
         }
@@ -335,11 +281,11 @@ class MainActivity : AppCompatActivity() {
 
 
 companion object {
-    private const val STORAGE_PERMISSION_CODE=1
-    private const val GALLERY=2
+    private const val STORAGE_PERMISSION_CODE = 1
+    private const val GALLERY = 2
 }
 
 
 
-    }
+}
 
